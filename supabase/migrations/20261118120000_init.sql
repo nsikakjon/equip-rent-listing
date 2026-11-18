@@ -1,10 +1,10 @@
 -- EquipRent: initial schema
+-- Tables are prefixed equip_ because they share a Supabase project with other products.
 -- Money is stored in kobo (bigint) to avoid floating point errors. ₦1 = 100 kobo.
 
-create extension if not exists "pgcrypto";
 
 -- Equipment categories. commission_rate is the owner commission for third-party listings.
-create table public.categories (
+create table public.equip_categories (
   slug            text primary key,
   name            text not null,
   kind            text not null check (kind in ('heavy_plant', 'small_tools')),
@@ -13,22 +13,22 @@ create table public.categories (
 );
 
 -- Owners: yards and individuals who list equipment.
-create table public.owners (
+create table public.equip_owners (
   id            uuid primary key default gen_random_uuid(),
   name          text not null,
   business_name text,
-  phone         text not null,
+  phone         text not null unique,
   email         text,
   verified      boolean not null default false,
   created_at    timestamptz not null default now()
 );
 
 -- Listings. owner_id null + is_own_inventory = our own stock (no commission).
-create table public.listings (
+create table public.equip_listings (
   id                   bigint generated always as identity primary key,
-  owner_id             uuid references public.owners(id) on delete set null,
+  owner_id             uuid references public.equip_owners(id) on delete set null,
   is_own_inventory     boolean not null default false,
-  category_slug        text not null references public.categories(slug),
+  category_slug        text not null references public.equip_categories(slug),
   title                text not null,
   description          text not null default '',
   area                 text not null,
@@ -41,13 +41,13 @@ create table public.listings (
   status               text not null default 'pending' check (status in ('pending', 'active', 'paused')),
   created_at           timestamptz not null default now()
 );
-create index listings_category_idx on public.listings (category_slug) where status = 'active';
+create index equip_listings_category_idx on public.equip_listings (category_slug) where status = 'active';
 
 -- Bookings. Every amount is frozen at quote time so later fee changes never alter a booking.
-create table public.bookings (
+create table public.equip_bookings (
   id                  uuid primary key default gen_random_uuid(),
   reference           text not null unique,
-  listing_id          bigint not null references public.listings(id),
+  listing_id          bigint not null references public.equip_listings(id),
   channel             text not null check (channel in ('web', 'whatsapp')),
   renter_name         text not null,
   renter_phone        text not null,
@@ -74,10 +74,10 @@ create table public.bookings (
   paid_at             timestamptz,
   created_at          timestamptz not null default now()
 );
-create index bookings_renter_phone_idx on public.bookings (renter_phone, created_at desc);
+create index equip_bookings_renter_phone_idx on public.equip_bookings (renter_phone, created_at desc);
 
 -- WhatsApp conversation state, keyed by the sender's phone (E.164 without +).
-create table public.whatsapp_sessions (
+create table public.equip_whatsapp_sessions (
   phone      text primary key,
   state      jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now()
@@ -85,11 +85,11 @@ create table public.whatsapp_sessions (
 
 -- Row level security: the public (anon key) may only read categories and active listings.
 -- All writes go through the server with the service role key.
-alter table public.categories        enable row level security;
-alter table public.owners            enable row level security;
-alter table public.listings          enable row level security;
-alter table public.bookings          enable row level security;
-alter table public.whatsapp_sessions enable row level security;
+alter table public.equip_categories        enable row level security;
+alter table public.equip_owners            enable row level security;
+alter table public.equip_listings          enable row level security;
+alter table public.equip_bookings          enable row level security;
+alter table public.equip_whatsapp_sessions enable row level security;
 
-create policy "categories are public" on public.categories for select using (true);
-create policy "active listings are public" on public.listings for select using (status = 'active');
+create policy "categories are public" on public.equip_categories for select using (true);
+create policy "active listings are public" on public.equip_listings for select using (status = 'active');

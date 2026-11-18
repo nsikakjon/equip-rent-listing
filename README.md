@@ -32,7 +32,7 @@ webhook payload to `/api/whatsapp/webhook` (see `src/lib/whatsapp/bot.test.ts` f
 
 ## Deploy
 
-1. **Supabase:** run `supabase/migrations/20261118120000_init.sql`, then `supabase/seed.sql` (SQL editor, or
+1. **Supabase:** (already applied to the existing `whatsapp-platform` project on 2026-11-18; tables are prefixed `equip_`.) For a fresh project, run `supabase/migrations/20261118120000_init.sql`, then `supabase/seed.sql` (SQL editor, or
    `supabase db push`). Copy the project URL and **service role** key.
 2. **Railway:** create a service from this repo. `railway.json` sets the build and start commands. Add the
    variables from `.env.example`.

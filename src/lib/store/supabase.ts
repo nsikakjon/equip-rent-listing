@@ -17,13 +17,13 @@ export function createSupabaseStore(url: string, serviceRoleKey: string): Store 
   return {
     kind: "supabase",
     async listCategories() {
-      return must(await db.from("categories").select("*").order("sort_order")) as Category[];
+      return must(await db.from("equip_categories").select("*").order("sort_order")) as Category[];
     },
     async getCategory(slug) {
-      return must(await db.from("categories").select("*").eq("slug", slug).maybeSingle()) as Category | null;
+      return must(await db.from("equip_categories").select("*").eq("slug", slug).maybeSingle()) as Category | null;
     },
     async listListings(filter = {}, limit = 50) {
-      let q = db.from("listings").select("*").eq("status", "active");
+      let q = db.from("equip_listings").select("*").eq("status", "active");
       if (filter.category) q = q.eq("category_slug", filter.category);
       if (filter.area) q = q.ilike("area", `%${filter.area}%`);
       if (filter.q) {
@@ -33,19 +33,19 @@ export function createSupabaseStore(url: string, serviceRoleKey: string): Store 
       return must(await q.order("created_at", { ascending: false }).limit(limit)) as Listing[];
     },
     async getListing(id) {
-      return must(await db.from("listings").select("*").eq("id", id).maybeSingle()) as Listing | null;
+      return must(await db.from("equip_listings").select("*").eq("id", id).maybeSingle()) as Listing | null;
     },
     async getOwner(id) {
-      return must(await db.from("owners").select("*").eq("id", id).maybeSingle()) as Owner | null;
+      return must(await db.from("equip_owners").select("*").eq("id", id).maybeSingle()) as Owner | null;
     },
     async createListing(input) {
       let owner = must(
-        await db.from("owners").select("*").eq("phone", input.owner.phone).maybeSingle(),
+        await db.from("equip_owners").select("*").eq("phone", input.owner.phone).maybeSingle(),
       ) as Owner | null;
       if (!owner) {
         owner = must(
           await db
-            .from("owners")
+            .from("equip_owners")
             .insert({
               name: input.owner.name,
               business_name: input.owner.business_name || null,
@@ -60,24 +60,24 @@ export function createSupabaseStore(url: string, serviceRoleKey: string): Store 
       void _owner;
       return must(
         await db
-          .from("listings")
+          .from("equip_listings")
           .insert({ ...fields, owner_id: owner.id, is_own_inventory: false, status: "pending" })
           .select()
           .single(),
       ) as Listing;
     },
     async createBooking(input) {
-      return must(await db.from("bookings").insert(input).select().single()) as Booking;
+      return must(await db.from("equip_bookings").insert(input).select().single()) as Booking;
     },
     async getBookingByReference(reference) {
       return must(
-        await db.from("bookings").select("*").eq("reference", reference).maybeSingle(),
+        await db.from("equip_bookings").select("*").eq("reference", reference).maybeSingle(),
       ) as Booking | null;
     },
     async latestBookingForPhone(phone) {
       return must(
         await db
-          .from("bookings")
+          .from("equip_bookings")
           .select("*")
           .eq("renter_phone", phone)
           .order("created_at", { ascending: false })
@@ -87,19 +87,19 @@ export function createSupabaseStore(url: string, serviceRoleKey: string): Store 
     },
     async updateBooking(reference, patch) {
       return must(
-        await db.from("bookings").update(patch).eq("reference", reference).select().maybeSingle(),
+        await db.from("equip_bookings").update(patch).eq("reference", reference).select().maybeSingle(),
       ) as Booking | null;
     },
     async getSession(phone) {
       const row = must(
-        await db.from("whatsapp_sessions").select("state").eq("phone", phone).maybeSingle(),
+        await db.from("equip_whatsapp_sessions").select("state").eq("phone", phone).maybeSingle(),
       ) as { state: Record<string, unknown> } | null;
       return row?.state ?? {};
     },
     async setSession(phone, state) {
       must(
         await db
-          .from("whatsapp_sessions")
+          .from("equip_whatsapp_sessions")
           .upsert({ phone, state, updated_at: new Date().toISOString() })
           .select(),
       );

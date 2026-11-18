@@ -1,6 +1,6 @@
 -- Categories and commission rates from the Lagos business model:
 -- 10–15% for heavy plant (we default to 12%), 15–25% for small tools (we default to 20%).
-insert into public.categories (slug, name, kind, commission_rate, sort_order) values
+insert into public.equip_categories (slug, name, kind, commission_rate, sort_order) values
   ('excavators',   'Excavators',               'heavy_plant', 0.12, 1),
   ('cranes',       'Cranes',                   'heavy_plant', 0.12, 2),
   ('loaders',      'Loaders & backhoes',       'heavy_plant', 0.12, 3),
@@ -15,7 +15,7 @@ on conflict (slug) do nothing;
 
 -- Starter own-inventory listings (cheap, fast-moving site equipment). Prices are placeholders:
 -- confirm with 3–5 Lagos yards before launch.
-insert into public.listings
+insert into public.equip_listings
   (is_own_inventory, category_slug, title, description, area, daily_rate_kobo, equipment_value_kobo, status)
 values
   (true, 'mixers',      'Half-bag diesel concrete mixer', 'Diesel, towable. Ideal for slabs and columns.', 'Lekki', 2500000, 120000000, 'active'),
