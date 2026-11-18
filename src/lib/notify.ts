@@ -9,8 +9,13 @@ import type { Booking, Listing } from "./types";
  */
 async function toOps(body: string) {
   const ops = process.env.OPS_WHATSAPP_NUMBER;
-  if (ops) await sendText(ops, body);
-  else console.info(`[ops] ${body}`);
+  if (!ops) return console.info(`[ops] ${body}`);
+  // An alert must never break the booking or payment that triggered it.
+  try {
+    await sendText(ops.replace(/\D/g, ""), body);
+  } catch (err) {
+    console.error("Ops alert failed", err);
+  }
 }
 
 export async function notifyNewBooking(b: Booking, l: Listing) {
