@@ -33,7 +33,7 @@ export async function initializeCheckout(booking: Booking, callbackUrl: string):
   const reference = `${booking.reference}-${Date.now().toString(36).toUpperCase()}`;
   const res = await fetch(`${API}/transaction/initialize`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${secretKey()}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${secretKey().trim()}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       email: payerEmail(booking),
       amount: booking.total_due_kobo,
@@ -58,7 +58,7 @@ export interface VerifiedTransaction {
 /** Confirms a transaction with Paystack's API. Never trust a webhook body or redirect alone. */
 export async function verifyTransaction(reference: string): Promise<VerifiedTransaction | null> {
   const res = await fetch(`${API}/transaction/verify/${encodeURIComponent(reference)}`, {
-    headers: { Authorization: `Bearer ${secretKey()}` },
+    headers: { Authorization: `Bearer ${secretKey().trim()}` },
     cache: "no-store",
   });
   if (!res.ok) return null;

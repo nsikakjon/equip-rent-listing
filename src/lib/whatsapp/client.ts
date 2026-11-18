@@ -12,24 +12,30 @@ export async function sendText(to: string, body: string): Promise<void> {
     console.info(`[whatsapp:dry-run] to ${to}:\n${body}`);
     return;
   }
-  const res = await fetch(
-    `https://graph.facebook.com/${GRAPH_VERSION}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
-        "Content-Type": "application/json",
+  let res: Response;
+  try {
+    res = await fetch(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${process.env.WHATSAPP_PHONE_NUMBER_ID?.trim()}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN?.trim()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to,
+          type: "text",
+          text: { preview_url: true, body },
+        }),
       },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        recipient_type: "individual",
-        to,
-        type: "text",
-        text: { preview_url: true, body },
-      }),
-    },
-  );
-  if (!res.ok) console.error(`WhatsApp send failed (${res.status}): ${await res.text()}`);
+    );
+  } catch (err) {
+    console.error("WhatsApp send failed (network)", err);
+    return;
+  }
+  if (!res.ok) console.error(`WhatsApp send failed (${res.status}): ${await res.text().catch(() => "")}`);
 }
 
 /** Meta signs webhook POSTs with HMAC-SHA256 of the raw body using the app secret. */
